@@ -10,9 +10,9 @@ namespace CHIP8
 {
     public partial class DebuggerForm : Form
     {
-        private CHIP8 virtualMachine = null;
+        private LibCHIP8.CHIP8 virtualMachine = null;
 
-        public DebuggerForm(CHIP8 vm)
+        public DebuggerForm(LibCHIP8.CHIP8 vm)
         {
             InitializeComponent();
 
@@ -30,7 +30,7 @@ namespace CHIP8
             short opcode;
             for (int i = 0x200; i < 0xEA0; i += 2)
             {
-                opcode = (short)((virtualMachine.mainMemory[i] << 8) | virtualMachine.mainMemory[i + 1]);
+                opcode = (short)((virtualMachine.MainMemory[i] << 8) | virtualMachine.MainMemory[i + 1]);
                 ListViewItem row = new ListViewItem(i.ToString("X").PadLeft(4));
                 row.Tag = i;
                 row.SubItems.Add(opcode.ToString("X").PadLeft(4, '0'));
@@ -58,14 +58,14 @@ namespace CHIP8
 
         public void UpdateValues()
         {
-            grdMainMemory.Items[(virtualMachine.programCounter-0x200)/2].Selected = true;
-            grdMainMemory.EnsureVisible((virtualMachine.programCounter - 0x200) / 2);
+            grdMainMemory.Items[(virtualMachine.ProgramCounter-0x200)/2].Selected = true;
+            grdMainMemory.EnsureVisible((virtualMachine.ProgramCounter - 0x200) / 2);
 
             lblIndexRegister.Text = "I: " + virtualMachine.I.ToString("X").PadLeft(2);
-            lblProgramCounter.Text = "PC: " + virtualMachine.programCounter.ToString("X").PadLeft(3);
-            lblStackPointer.Text = "SP: " + virtualMachine.stackPointer.ToString("X").PadLeft(3);
-            lblDelayTimer.Text = "DT: " + virtualMachine.delayTimer.ToString("X").PadLeft(2);
-            lblSoundTimer.Text = "ST: " + virtualMachine.soundTimer.ToString("X").PadLeft(2);
+            lblProgramCounter.Text = "PC: " + virtualMachine.ProgramCounter.ToString("X").PadLeft(3);
+            lblStackPointer.Text = "SP: " + virtualMachine.StackPointer.ToString("X").PadLeft(3);
+            lblDelayTimer.Text = "DT: " + virtualMachine.DelayTimer.ToString("X").PadLeft(2);
+            lblSoundTimer.Text = "ST: " + virtualMachine.SoundTimer.ToString("X").PadLeft(2);
 
             //update each register
             for (int i = 0; i < 16; ++i)

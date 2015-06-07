@@ -28,7 +28,6 @@ namespace CHIP8
         /// </summary>
         private void InitializeComponent()
         {
-            this.picRenderOutput = new System.Windows.Forms.PictureBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadROMToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -37,18 +36,9 @@ namespace CHIP8
             this.btnStep = new System.Windows.Forms.Button();
             this.btnRun = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.picRenderOutput)).BeginInit();
+            this.glControl = new OpenTK.GLControl();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // picRenderOutput
-            // 
-            this.picRenderOutput.Location = new System.Drawing.Point(12, 27);
-            this.picRenderOutput.Name = "picRenderOutput";
-            this.picRenderOutput.Size = new System.Drawing.Size(256, 128);
-            this.picRenderOutput.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.picRenderOutput.TabIndex = 0;
-            this.picRenderOutput.TabStop = false;
             // 
             // menuStrip1
             // 
@@ -65,13 +55,13 @@ namespace CHIP8
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.loadROMToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(35, 20);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // loadROMToolStripMenuItem
             // 
             this.loadROMToolStripMenuItem.Name = "loadROMToolStripMenuItem";
-            this.loadROMToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
+            this.loadROMToolStripMenuItem.Size = new System.Drawing.Size(139, 22);
             this.loadROMToolStripMenuItem.Text = "Load ROM...";
             this.loadROMToolStripMenuItem.Click += new System.EventHandler(this.loadROMToolStripMenuItem_Click);
             // 
@@ -124,17 +114,27 @@ namespace CHIP8
             this.btnReset.UseVisualStyleBackColor = true;
             this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
             // 
+            // glControl
+            // 
+            this.glControl.BackColor = System.Drawing.Color.Black;
+            this.glControl.Location = new System.Drawing.Point(12, 27);
+            this.glControl.Name = "glControl";
+            this.glControl.Size = new System.Drawing.Size(256, 128);
+            this.glControl.TabIndex = 7;
+            this.glControl.VSync = false;
+            this.glControl.Load += new System.EventHandler(this.glControl_Load);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(280, 402);
+            this.Controls.Add(this.glControl);
             this.Controls.Add(this.btnReset);
             this.Controls.Add(this.btnRun);
             this.Controls.Add(this.btnStep);
             this.Controls.Add(this.grpKeys);
             this.Controls.Add(this.chkShowDebug);
-            this.Controls.Add(this.picRenderOutput);
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.KeyPreview = true;
@@ -144,7 +144,6 @@ namespace CHIP8
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "C#IP 8";
-            ((System.ComponentModel.ISupportInitialize)(this.picRenderOutput)).EndInit();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
@@ -154,7 +153,6 @@ namespace CHIP8
 
         #endregion
 
-        private System.Windows.Forms.PictureBox picRenderOutput;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem loadROMToolStripMenuItem;
@@ -163,6 +161,7 @@ namespace CHIP8
         private System.Windows.Forms.Button btnStep;
         private System.Windows.Forms.Button btnRun;
         private System.Windows.Forms.Button btnReset;
+        private OpenTK.GLControl glControl;
     }
 }
 

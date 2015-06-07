@@ -3,30 +3,25 @@
  * Please do not use or copy source without permission.
  * */
 
+using OpenTK.Graphics.OpenGL;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace CHIP8
 {
     public partial class MainForm : Form
     {
-        private bool run = false;
-        private CHIP8 virtualMachine = null;
+        private LibCHIP8.CHIP8 virtualMachine = null;
         private DebuggerForm debugForm = null;
-        private Utility.FastBitmap frameBuffer = null;
+        private bool running;
+        private bool loaded;
+
         public MainForm()
         {
             InitializeComponent();
 
             this.FormClosing += new FormClosingEventHandler(MainForm_FormClosing);
-
-            frameBuffer = new Utility.FastBitmap(new Bitmap(64, 32));
-            picRenderOutput.Image = frameBuffer.Bitmap;
 
             //set up keypad
             //lets put '0' key bottom center
@@ -57,7 +52,7 @@ namespace CHIP8
                 grpKeys.Controls.Add(btn);
             }
 
-            virtualMachine = new CHIP8();
+            virtualMachine = new LibCHIP8.CHIP8();
 
             UpdateFrameBuffer();
         }
@@ -65,30 +60,30 @@ namespace CHIP8
         void MainForm_KeyUp(object sender, KeyEventArgs e)
         {
             byte button_bit = (byte)(e.KeyCode - 96);
-            if (((virtualMachine.key_press >> button_bit) & 0x1) == 0x1)
+            if (((virtualMachine.KeysPressed >> button_bit) & 0x1) == 0x1)
             {
-                virtualMachine.key_press ^= (short)(0x1 << button_bit);
+                virtualMachine.KeysPressed ^= (short)(0x1 << button_bit);
             }
         }
 
         void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
             byte button_bit = (byte)(e.KeyCode-96);
-            virtualMachine.key_press |= (short)(0x1 << button_bit);
+            virtualMachine.KeysPressed |= (short)(0x1 << button_bit);
         }
 
         void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            run = false;
+            running = false;
         }
 
         void btn_MouseUp(object sender, MouseEventArgs e)
         {
             Button btn = sender as Button;
             byte button_bit = (byte)btn.Tag;
-            if (((virtualMachine.key_press >> button_bit) & 0x1) == 0x1)
+            if (((virtualMachine.KeysPressed >> button_bit) & 0x1) == 0x1)
             {
-                virtualMachine.key_press ^= (short)(0x1 << button_bit);
+                virtualMachine.KeysPressed ^= (short)(0x1 << button_bit);
             }
         }
 
@@ -96,7 +91,7 @@ namespace CHIP8
         {
             Button btn = sender as Button;
             byte button_bit = (byte)btn.Tag;
-            virtualMachine.key_press |= (short)(0x1 << button_bit);
+            virtualMachine.KeysPressed |= (short)(0x1 << button_bit);
         }
 
         private void loadROMToolStripMenuItem_Click(object sender, EventArgs e)
@@ -112,7 +107,7 @@ namespace CHIP8
                 //open file for reading
                 System.IO.FileStream fileReader = new System.IO.FileStream(fileDialog.FileName, System.IO.FileMode.Open, System.IO.FileAccess.Read);
                 //read into main memory array, starting at location 0x200, and with location 0xE9F as the upper bound
-                fileReader.Read(virtualMachine.mainMemory, 0x200, (0xE9F - 0x200)+1);
+                fileReader.Read(virtualMachine.MainMemory, 0x200, (0xE9F - 0x200)+1);
                 fileReader.Close();
             }
 
@@ -124,7 +119,7 @@ namespace CHIP8
 
         private void chkShowDebug_CheckedChanged(object sender, EventArgs e)
         {
-            if (chkShowDebug.Checked == true)
+            if (chkShowDebug.Checked)
             {
                 debugForm = new DebuggerForm(virtualMachine);
                 debugForm.FormClosing += new FormClosingEventHandler(debugForm_FormClosing);
@@ -135,8 +130,8 @@ namespace CHIP8
                 if (debugForm != null)
                 {
                     debugForm.Close();
-                    debugForm = null;
                 }
+                debugForm = null;
             }
         }
 
@@ -145,33 +140,65 @@ namespace CHIP8
             chkShowDebug.Checked = false;
         }
 
-        //draw virtual machine internal framebuffer to our picture box for viewing
+        byte[] pixels;
         void UpdateFrameBuffer()
         {
-            frameBuffer.LockBitmap();
-            unsafe
+            if (loaded)
             {
                 for (int y = 0; y < 32; ++y)
                 {
                     for (int x = 0; x < 64; ++x)
                     {
-                        byte pixel = virtualMachine.frameBuffer[y * 64 + x];
-                        Color color = ( pixel == 0x1 ) ? Color.White : Color.Black;
-                        Utility.PixelData* pPixel = frameBuffer[x, y];
-                        pPixel->red = color.R;
-                        pPixel->green = color.G;
-                        pPixel->blue = color.B;
+                        int offset = y * 64 + x;
+                        pixels[offset] = (byte)(virtualMachine.FrameBuffer[offset] * 255);
                     }
                 }
-                frameBuffer.UnlockBitmap();
+
+                glControl.MakeCurrent();
+
+                GL.TexSubImage2D(   TextureTarget.Texture2D, 0, 0, 0, 64, 32,
+                                    OpenTK.Graphics.OpenGL.PixelFormat.Luminance, PixelType.UnsignedByte, pixels);
+
+                GL.Begin(PrimitiveType.Quads);
+
+                GL.TexCoord2(0.0f, 0.0f);
+                GL.Vertex2(0, 0);
+
+                GL.TexCoord2(1.0, 0.0f);
+                GL.Vertex2(1, 0);
+
+                GL.TexCoord2(1.0f, 1.0f);
+                GL.Vertex2(1, 1);
+
+                GL.TexCoord2(0.0f, 1.0f);
+                GL.Vertex2(0, 1);
+
+                GL.End();
+
+                glControl.SwapBuffers();
             }
 
-            picRenderOutput.Refresh();
         }
 
         private void btnStep_Click(object sender, EventArgs e)
         {
-            run = false;
+            running = false;
+            StepEmulator();
+        }
+
+        private void btnRun_Click(object sender, EventArgs e)
+        {
+            running = true;
+            while (running)
+            {
+                StepEmulator();
+                System.Threading.Thread.Sleep(1);
+                Application.DoEvents();
+            }
+        }
+
+        private void StepEmulator()
+        {
             virtualMachine.FetchDecodeExecute();
             UpdateFrameBuffer();
 
@@ -181,25 +208,47 @@ namespace CHIP8
             }
         }
 
-        private void btnRun_Click(object sender, EventArgs e)
-        {
-            run = true;
-            while (run)
-            {
-                virtualMachine.FetchDecodeExecute();
-                UpdateFrameBuffer();
-
-                if (debugForm != null)
-                {
-                    debugForm.UpdateValues();
-                }
-                Application.DoEvents();
-            }
-        }
-
         private void btnReset_Click(object sender, EventArgs e)
         {
             virtualMachine.Reset();
+        }
+
+        private void glControl_Load(object sender, EventArgs e)
+        {
+            loaded = true;
+            glInit();
+            UpdateFrameBuffer();
+        }
+
+        int textureId;
+        private void glInit()
+        {
+            pixels = new byte[64 * 32];
+            Array.Clear(pixels, 0, pixels.Length);
+
+            GL.Disable(EnableCap.CullFace | EnableCap.DepthTest | EnableCap.Lighting);
+            GL.Enable(EnableCap.Texture2D);
+            GL.ClearColor(Color.HotPink);
+
+            textureId = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, textureId);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 64, 32, 0,
+                          OpenTK.Graphics.OpenGL.PixelFormat.Luminance, PixelType.UnsignedByte, pixels);
+
+            int w = glControl.Width;
+            int h = glControl.Height;
+
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadIdentity();
+            GL.Ortho(0, 1, 1, 0, -1, 1);
+            GL.Viewport(0, 0, w, h);
+
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.LoadIdentity();
         }
     }
 }
