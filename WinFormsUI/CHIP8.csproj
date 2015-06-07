@@ -56,7 +56,6 @@
     <Compile Include="DebuggerForm.Designer.cs">
       <DependentUpon>DebuggerForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="FastBitmap.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
